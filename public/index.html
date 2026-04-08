@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Business Messaging Platform</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f0f1a; color: #e0e0e0; }
+    .header { background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 20px 30px; border-bottom: 1px solid #2a2a4a; display: flex; justify-content: space-between; align-items: center; }
+    .header h1 { font-size: 1.5rem; color: #00d4ff; }
+    .header .subtitle { color: #888; font-size: 0.85rem; }
+    .container { display: grid; grid-template-columns: 280px 1fr 320px; height: calc(100vh - 70px); }
+    
+    /* Sidebar */
+    .sidebar { background: #12121f; border-right: 1px solid #2a2a4a; padding: 20px; overflow-y: auto; }
+    .sidebar h3 { color: #00d4ff; margin-bottom: 15px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+    .user-card { background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 10px; padding: 14px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
+    .user-card:hover, .user-card.active { border-color: #00d4ff; background: #1e1e35; }
+    .user-card .name { font-weight: 600; margin-bottom: 4px; }
+    .user-card .meta { font-size: 0.75rem; color: #888; }
+    .user-card .segments { display: flex; gap: 4px; margin-top: 6px; flex-wrap: wrap; }
+    .segment-tag { background: #2a2a4a; color: #00d4ff; padding: 2px 8px; border-radius: 12px; font-size: 0.65rem; }
+    .consent-badges { display: flex; gap: 4px; margin-top: 6px; }
+    .consent-badge { padding: 2px 6px; border-radius: 4px; font-size: 0.6rem; font-weight: 600; }
+    .consent-badge.on { background: #0a3d2a; color: #00ff88; }
+    .consent-badge.off { background: #3d0a0a; color: #ff4444; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1>Smart Business Messaging</h1>
+      <div class="subtitle">Context-Aware Ecommerce Engagement Platform</div>
+    </div>
+    <div id="stats-bar" style="display:flex;gap:20px;font-size:0.8rem;color:#888;"></div>
+  </div>
+  <div class="container">
+    <div class="sidebar" id="sidebar">
+      <h3>Customers</h3>
+      <div id="user-list"></div>
+    </div>
+    <main class="main-panel" id="main-panel">
+      <div style="display:flex;align-items:center;justify-content:center;height:100%;color:#555;font-size:1.1rem;">
+        Select a customer to get started
+      </div>
+    </main>
+    <div class="right-panel" id="right-panel"></div>
+  </div>
+</body>
+</html>
+<style>
+    /* Main Panel */
+    .main-panel { padding: 20px; overflow-y: auto; }
+    .section-title { color: #00d4ff; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+    .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; }
+    .action-btn { background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 8px; padding: 14px; cursor: pointer; transition: all 0.2s; color: #e0e0e0; text-align: left; }
+    .action-btn:hover { border-color: #00d4ff; transform: translateY(-1px); }
+    .action-btn:focus { outline: 2px solid #00d4ff; outline-offset: 2px; }
+    .action-btn .label { font-weight: 600; font-size: 0.9rem; }
+    .action-btn .desc { font-size: 0.7rem; color: #888; margin-top: 4px; }
+    .action-btn .icon { font-size: 1.3rem; margin-bottom: 6px; }
+    
+    /* Channel selector */
+    .channel-selector { display: flex; gap: 8px; margin-bottom: 20px; }
+    .channel-btn { background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 20px; padding: 6px 14px; cursor: pointer; font-size: 0.75rem; color: #888; transition: all 0.2s; }
+    .channel-btn:hover, .channel-btn.active { border-color: #00d4ff; color: #00d4ff; }
+    .channel-btn:focus { outline: 2px solid #00d4ff; outline-offset: 2px; }
+    
+    /* Message preview */
+    .message-preview { background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+    .message-preview .channel-label { font-size: 0.7rem; color: #00d4ff; text-transform: uppercase; margin-bottom: 6px; }
+    .message-preview .content { white-space: pre-wrap; font-size: 0.85rem; line-height: 1.5; }
+    .message-preview .timestamp { font-size: 0.65rem; color: #555; margin-top: 8px; }
+    .message-preview .status { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.65rem; background: #0a3d2a; color: #00ff88; margin-top: 6px; }
+
+    /* Right Panel */
+    .right-panel { background: #12121f; border-left: 1px solid #2a2a4a; padding: 20px; overflow-y: auto; }
+    .rec-card { background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 8px; padding: 12px; margin-bottom: 8px; }
+    .rec-card .name { font-weight: 600; font-size: 0.85rem; }
+    .rec-card .price { color: #00ff88; font-size: 0.8rem; }
+    .rec-card .score { color: #888; font-size: 0.7rem; }
+    
+    /* Analytics */
+    .analytics-card { background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+    .analytics-card h4 { color: #00d4ff; font-size: 0.8rem; margin-bottom: 10px; }
+    .stat-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 0.8rem; }
+    .stat-value { color: #00ff88; font-weight: 600; }
+    
+    /* Cart items */
+    .cart-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #2a2a4a; font-size: 0.8rem; }
+    .cart-item:last-child { border-bottom: none; }
+
+    /* Event log */
+    .event-log { max-height: 200px; overflow-y: auto; }
+    .event-entry { padding: 6px 0; border-bottom: 1px solid #1a1a2e; font-size: 0.75rem; }
+    .event-entry .event-type { color: #00d4ff; font-weight: 600; }
+    .event-entry .event-time { color: #555; }
+  </style>
+<script>
+const API = '';
+let selectedUser = null;
+let selectedChannel = null;
+let users = [];
+
+async function fetchJSON(url, opts) {
+  const res = await fetch(API + url, opts);
+  return res.json();
+}
+
+async function init() {
+  users = await fetchJSON('/api/users');
+  renderUserList();
+  updateStatsBar();
+}
+
+function renderUserList() {
+  const list = document.getElementById('user-list');
+  list.innerHTML = users.map(u => `
+    <div class="user-card ${selectedUser?.id === u.id ? 'active' : ''}" onclick="selectUser('${u.id}')" role="button" tabindex="0" aria-label="Select customer ${u.name}">
+      <div class="name">${u.name}</div>
+      <div class="meta">Preferred: ${u.preferredChannel} · Cart: ${u.cart.length} items</div>
+      <div class="segments">${u.segments.map(s => `<span class="segment-tag">${s}</span>`).join('')}</div>
+      <div class="consent-badges">
+        ${['whatsapp','sms','email','instagram'].map(ch =>
+          `<span class="consent-badge ${u.consent[ch] ? 'on' : 'off'}">${ch}</span>`
+        ).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+async function selectUser(userId) {
+  selectedUser = users.find(u => u.id === userId);
+  selectedChannel = selectedUser.preferredChannel;
+  renderUserList();
+  renderMainPanel();
+  renderRightPanel();
+}
+
+function renderMainPanel() {
+  if (!selectedUser) return;
+  const panel = document.getElementById('main-panel');
+  panel.innerHTML = `
+    <h3 class="section-title">Send Message to ${selectedUser.name}</h3>
+    <div class="channel-selector" role="radiogroup" aria-label="Select messaging channel">
+      ${['whatsapp','sms','email','instagram'].map(ch => `
+        <button class="channel-btn ${selectedChannel === ch ? 'active' : ''} ${!selectedUser.consent[ch] ? 'off' : ''}"
+          onclick="setChannel('${ch}')" ${!selectedUser.consent[ch] ? 'disabled' : ''}
+          role="radio" aria-checked="${selectedChannel === ch}" aria-label="${ch}${!selectedUser.consent[ch] ? ' (no consent)' : ''}">
+          ${ch} ${!selectedUser.consent[ch] ? '🚫' : ''}
+        </button>
+      `).join('')}
+    </div>
+    <h3 class="section-title">Trigger Messages</h3>
+    <div class="action-grid">
+      <button class="action-btn" onclick="sendMsg('cart_abandonment')">
+        <div class="icon">🛒</div>
+        <div class="label">Cart Abandonment</div>
+        <div class="desc">Remind about items left in cart</div>
+      </button>
+      <button class="action-btn" onclick="sendMsg('browse_nudge')">
+        <div class="icon">👀</div>
+        <div class="label">Browse Nudge</div>
+        <div class="desc">Personalized recommendations</div>
+      </button>
+      <button class="action-btn" onclick="sendMsg('post_purchase')">
+        <div class="icon">🎉</div>
+        <div class="label">Post Purchase</div>
+        <div class="desc">Thank you + cross-sell</div>
+      </button>
+      <button class="action-btn" onclick="sendMsg('win_back')">
+        <div class="icon">💛</div>
+        <div class="label">Win Back</div>
+        <div class="desc">Re-engage inactive customers</div>
+      </button>
+      <button class="action-btn" onclick="sendMsg('welcome')">
+        <div class="icon">👋</div>
+        <div class="label">Welcome</div>
+        <div class="desc">Onboard new customers</div>
+      </button>
+      <button class="action-btn" onclick="simulateEvent('cart_abandoned')">
+        <div class="icon">⚡</div>
+        <div class="label">Simulate Cart Abandon</div>
+        <div class="desc">Auto-trigger from event</div>
+      </button>
+    </div>
+    <h3 class="section-title">Message History</h3>
+    <div id="message-history"></div>
+  `;
+  loadMessageHistory();
+}
+</script>
+<script>
+function setChannel(ch) {
+  selectedChannel = ch;
+  renderMainPanel();
+}
+
+async function sendMsg(trigger) {
+  const result = await fetchJSON('/api/messages/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId: selectedUser.id, trigger, channel: selectedChannel })
+  });
+  if (result.error) {
+    alert(result.error);
+    return;
+  }
+  loadMessageHistory();
+  updateStatsBar();
+}
+
+async function simulateEvent(eventType) {
+  const result = await fetchJSON('/api/events', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId: selectedUser.id, eventType, data: {} })
+  });
+  if (result.triggeredMessages?.length > 0) {
+    loadMessageHistory();
+    updateStatsBar();
+  }
+}
+
+async function loadMessageHistory() {
+  if (!selectedUser) return;
+  const messages = await fetchJSON(`/api/messages/${selectedUser.id}`);
+  const container = document.getElementById('message-history');
+  if (messages.length === 0) {
+    container.innerHTML = '<div style="color:#555;font-size:0.85rem;">No messages sent yet</div>';
+    return;
+  }
+  container.innerHTML = messages.reverse().map(m => `
+    <div class="message-preview">
+      <div class="channel-label">${m.channel} · ${m.trigger.replace(/_/g, ' ')}</div>
+      <div class="content">${m.message}</div>
+      <div class="timestamp">${new Date(m.sentAt).toLocaleString()}</div>
+      <span class="status">${m.status}</span>
+    </div>
+  `).join('');
+}
+
+function renderRightPanel() {
+  if (!selectedUser) return;
+  const panel = document.getElementById('right-panel');
+  panel.innerHTML = `
+    <h3 class="section-title">Customer Profile</h3>
+    <div class="analytics-card">
+      <h4>📊 Overview</h4>
+      <div class="stat-row"><span>Preferred Channel</span><span class="stat-value">${selectedUser.preferredChannel}</span></div>
+      <div class="stat-row"><span>Total Purchases</span><span class="stat-value">${selectedUser.purchaseHistory.length}</span></div>
+      <div class="stat-row"><span>Cart Items</span><span class="stat-value">${selectedUser.cart.length}</span></div>
+      <div class="stat-row"><span>Browse History</span><span class="stat-value">${selectedUser.browseHistory.length} items</span></div>
+      <div class="stat-row"><span>Last Active</span><span class="stat-value">${new Date(selectedUser.lastActive).toLocaleDateString()}</span></div>
+    </div>
+
+    ${selectedUser.cart.length > 0 ? `
+    <h3 class="section-title">🛒 Cart</h3>
+    <div class="analytics-card">
+      ${selectedUser.cart.map(item => `
+        <div class="cart-item">
+          <span>${item.name}</span>
+          <span style="color:#00ff88">$${item.price}</span>
+        </div>
+      `).join('')}
+      <div class="cart-item" style="font-weight:600;border-top:1px solid #2a2a4a;margin-top:4px;padding-top:8px;">
+        <span>Total</span>
+        <span style="color:#00ff88">$${selectedUser.cart.reduce((s,i) => s + i.price, 0).toFixed(2)}</span>
+      </div>
+    </div>` : ''}
+
+    <h3 class="section-title">🏷️ Segments</h3>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;">
+      ${selectedUser.segments.map(s => `<span class="segment-tag" style="font-size:0.75rem;padding:4px 10px;">${s}</span>`).join('')}
+    </div>
+
+    <h3 class="section-title">🔒 Consent Management</h3>
+    <div class="analytics-card">
+      ${['whatsapp','sms','email','instagram'].map(ch => `
+        <div class="stat-row">
+          <span>${ch}</span>
+          <label style="cursor:pointer;">
+            <input type="checkbox" ${selectedUser.consent[ch] ? 'checked' : ''} onchange="toggleConsent('${ch}', this.checked)" aria-label="Toggle ${ch} consent">
+            <span class="consent-badge ${selectedUser.consent[ch] ? 'on' : 'off'}">${selectedUser.consent[ch] ? 'Opted In' : 'Opted Out'}</span>
+          </label>
+        </div>
+      `).join('')}
+    </div>
+
+    <h3 class="section-title">📈 Platform Analytics</h3>
+    <div id="analytics-section"></div>
+  `;
+  loadAnalytics();
+}
+
+async function toggleConsent(channel, value) {
+  await fetchJSON(`/api/users/${selectedUser.id}/consent`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ [channel]: value })
+  });
+  selectedUser.consent[channel] = value;
+  renderRightPanel();
+  renderMainPanel();
+}
+
+async function loadAnalytics() {
+  const overview = await fetchJSON('/api/analytics/overview');
+  const channels = await fetchJSON('/api/analytics/channel-performance');
+  const section = document.getElementById('analytics-section');
+  section.innerHTML = `
+    <div class="analytics-card">
+      <h4>Messages Sent: ${overview.totalMessages}</h4>
+      ${Object.entries(overview.byTrigger).map(([k,v]) => `
+        <div class="stat-row"><span>${k.replace(/_/g,' ')}</span><span class="stat-value">${v}</span></div>
+      `).join('')}
+    </div>
+    <div class="analytics-card">
+      <h4>Channel Performance</h4>
+      ${channels.filter(c => c.sent > 0).map(c => `
+        <div style="margin-bottom:8px;">
+          <div style="font-weight:600;font-size:0.8rem;margin-bottom:2px;">${c.channel}</div>
+          <div class="stat-row"><span>Sent</span><span class="stat-value">${c.sent}</span></div>
+          <div class="stat-row"><span>Open Rate</span><span class="stat-value">${c.openRate}</span></div>
+          <div class="stat-row"><span>Click Rate</span><span class="stat-value">${c.clickRate}</span></div>
+        </div>
+      `).join('')}
+      ${channels.every(c => c.sent === 0) ? '<div style="color:#555;font-size:0.8rem;">No messages sent yet</div>' : ''}
+    </div>
+  `;
+}
+
+async function updateStatsBar() {
+  const overview = await fetchJSON('/api/analytics/overview');
+  document.getElementById('stats-bar').innerHTML = `
+    <span>Messages: <span style="color:#00d4ff">${overview.totalMessages}</span></span>
+    <span>Users: <span style="color:#00d4ff">${users.length}</span></span>
+  `;
+}
+
+init();
+</script>
