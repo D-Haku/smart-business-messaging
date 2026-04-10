@@ -1,0 +1,53 @@
+.consent-manager { max-width: 700px; }
+.consent-title { font-size: 1rem; margin-bottom: 4px; }
+.consent-desc { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 20px; }
+
+.consent-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 28px; }
+
+.consent-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 16px;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  transition: all 0.2s;
+}
+.consent-card.on { border-color: var(--success); }
+.consent-card.off { border-color: var(--border); }
+
+.consent-channel { font-weight: 600; font-size: 0.85rem; text-transform: capitalize; }
+.consent-status { font-size: 0.7rem; font-weight: 500; }
+.consent-card.on .consent-status { color: var(--success); }
+.consent-card.off .consent-status { color: var(--danger); }
+
+.toggle { position: relative; width: 44px; height: 24px; cursor: pointer; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute; inset: 0;
+  background: #333; border-radius: 24px;
+  transition: 0.3s;
+}
+.toggle-slider::before {
+  content: ''; position: absolute;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: white; left: 3px; top: 3px;
+  transition: 0.3s;
+}
+.toggle input:checked + .toggle-slider { background: var(--success); }
+.toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+.audit-title { font-size: 0.9rem; margin-bottom: 12px; }
+.audit-list { display: flex; flex-direction: column; gap: 6px; max-height: 300px; overflow-y: auto; }
+.no-audit { color: var(--text-muted); font-size: 0.8rem; }
+
+.audit-entry {
+  display: flex; gap: 10px; align-items: center;
+  padding: 8px 12px; border-radius: 8px;
+  background: var(--bg-card); font-size: 0.72rem;
+}
+.audit-action { font-weight: 600; min-width: 70px; }
+.audit-entry.granted .audit-action { color: var(--success); }
+.audit-entry.revoked .audit-action { color: var(--danger); }
+.audit-entry.blocked .audit-action { color: var(--danger); }
+.audit-entry.verified .audit-action { color: var(--accent-light); }
+.audit-channel { color: var(--text-secondary); min-width: 60px; }
+.audit-reason { color: var(--text-secondary); flex: 1; }
+.audit-time { color: var(--text-muted); font-size: 0.65rem; }
