@@ -38,9 +38,17 @@ export default function MessagePanel({ user, onSend }) {
 
   const handleSend = async (trigger) => {
     setSending(trigger);
-    await api.sendMessage(user._id, trigger, channel, useAI);
-    await loadMessages();
-    onSend?.();
+    try {
+      const result = await api.sendMessage(user._id, trigger, channel, useAI);
+      if (result.error) {
+        alert(`Send failed: ${result.error}`);
+      } else {
+        await loadMessages();
+        onSend?.();
+      }
+    } catch (err) {
+      alert('Failed to send message. Is the backend running?');
+    }
     setSending(null);
   };
 

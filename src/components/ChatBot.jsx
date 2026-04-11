@@ -30,9 +30,13 @@ export default function ChatBot({ user }) {
     try {
       const history = messages.map(m => ({ role: m.role, content: m.content }));
       const reply = await api.chat(user._id, userMsg.content, history);
-      setMessages(prev => [...prev, reply]);
+      if (reply.error) {
+        setMessages(prev => [...prev, { role: 'assistant', content: reply.error }]);
+      } else {
+        setMessages(prev => [...prev, reply]);
+      }
     } catch {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, something went wrong. Make sure your OpenAI API key is configured.' }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, something went wrong. Please try again.' }]);
     }
     setLoading(false);
   };
