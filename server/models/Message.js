@@ -9,7 +9,8 @@ const messageSchema = new mongoose.Schema({
   personalizedFor: String,
   segments: [String],
   status: { type: String, default: 'delivered' },
-  consentVerified: { type: Boolean, default: true }
+  consentVerified: { type: Boolean, default: true },
+  aiGenerated: { type: Boolean, default: false }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Message', messageSchema);

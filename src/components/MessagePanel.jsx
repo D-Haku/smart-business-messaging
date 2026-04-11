@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../api';
 import { motion, AnimatePresence } from 'framer-motion';
 import ConsentManager from './ConsentManager';
+import ChatBot from './ChatBot';
 import './MessagePanel.css';
 
 const TRIGGERS = [
@@ -20,6 +21,7 @@ export default function MessagePanel({ user, onSend }) {
   const [messages, setMessages] = useState([]);
   const [sending, setSending] = useState(null);
   const [tab, setTab] = useState('send');
+  const [useAI, setUseAI] = useState(true);
 
   useEffect(() => {
     if (user) {
@@ -36,7 +38,7 @@ export default function MessagePanel({ user, onSend }) {
 
   const handleSend = async (trigger) => {
     setSending(trigger);
-    await api.sendMessage(user._id, trigger, channel);
+    await api.sendMessage(user._id, trigger, channel, useAI);
     await loadMessages();
     onSend?.();
     setSending(null);
@@ -65,6 +67,7 @@ export default function MessagePanel({ user, onSend }) {
         <div className="panel-tabs">
           <button className={`tab-btn ${tab === 'send' ? 'active' : ''}`} onClick={() => setTab('send')}>Send</button>
           <button className={`tab-btn ${tab === 'history' ? 'active' : ''}`} onClick={() => setTab('history')}>History ({messages.length})</button>
+          <button className={`tab-btn ${tab === 'chat' ? 'active' : ''}`} onClick={() => setTab('chat')}>🤖 AI Chat</button>
           <button className={`tab-btn ${tab === 'consent' ? 'active' : ''}`} onClick={() => setTab('consent')}>Consent</button>
         </div>
       </div>
@@ -83,6 +86,16 @@ export default function MessagePanel({ user, onSend }) {
                 {CHANNEL_ICONS[ch]} {ch}
               </button>
             ))}
+          </div>
+
+          <div className="ai-toggle">
+            <label className="ai-toggle-label" aria-label="Toggle AI message generation">
+              <input type="checkbox" checked={useAI} onChange={() => setUseAI(!useAI)} />
+              <span className="ai-toggle-slider" />
+              <span className="ai-toggle-text">
+                {useAI ? '🤖 AI-Generated Messages' : '📝 Template Messages'}
+              </span>
+            </label>
           </div>
 
           <div className="trigger-grid">
@@ -138,6 +151,7 @@ export default function MessagePanel({ user, onSend }) {
                   <div className="bubble-header">
                     <span className={`channel-tag ${m.channel}`}>{CHANNEL_ICONS[m.channel]} {m.channel}</span>
                     <span className="trigger-tag">{m.trigger?.replace(/_/g, ' ')}</span>
+                    {m.aiGenerated && <span className="ai-badge">🤖 AI</span>}
                     <span className="msg-status">{m.status}</span>
                   </div>
                   <div className="bubble-content">{m.message}</div>
@@ -149,6 +163,7 @@ export default function MessagePanel({ user, onSend }) {
         </div>
       )}
 
+      {tab === 'chat' && <ChatBot user={user} />}
       {tab === 'consent' && <ConsentManager user={user} />}
     </div>
   );

@@ -7,6 +7,7 @@ const userRoutes = require('./routes/users');
 const messageRoutes = require('./routes/messages');
 const analyticsRoutes = require('./routes/analytics');
 const campaignRoutes = require('./routes/campaigns');
+const chatRoutes = require('./routes/chat');
 const { seedData } = require('./seed');
 
 const app = express();
@@ -21,6 +22,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/campaigns', campaignRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ ok: true }));

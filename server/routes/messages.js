@@ -4,6 +4,7 @@ const User = require('../models/User');
 const Message = require('../models/Message');
 const Product = require('../models/Product');
 const { renderTemplate } = require('../messaging/templates');
+const { generateMessage } = require('../ai/aiService');
 
 const TRIGGER_INTENT = {
   cart_abandonment: 'RECOVERY',
@@ -14,7 +15,7 @@ const TRIGGER_INTENT = {
 };
 
 router.post('/send', async (req, res) => {
-  const { userId, trigger, channel: preferredChannel } = req.body;
+  const { userId, trigger, channel: preferredChannel, useAI } = req.body;
   if (!userId || !trigger) return res.status(400).json({ error: 'userId and trigger required' });
 
   const user = await User.findById(userId).lean();
@@ -23,7 +24,6 @@ router.post('/send', async (req, res) => {
   const channel = resolveChannel(user, preferredChannel);
   if (!channel) return res.status(400).json({ error: 'No consented channel available' });
 
-  // Check consent
   const intent = TRIGGER_INTENT[trigger] || 'PROMOTION';
   const consentType = intent === 'TRANSACTIONAL' ? 'TRANSACTIONAL' : intent === 'SUPPORT' ? 'SUPPORT' : 'MARKETING';
   if (!user.consentTypes?.[channel]?.[consentType] && !user.consent?.[channel]) {
@@ -31,14 +31,28 @@ router.post('/send', async (req, res) => {
   }
 
   const products = await Product.find().lean();
-  const context = buildContext(user, products);
-  const message = renderTemplate(trigger, context, channel);
+  let message;
+  let aiGenerated = false;
+
+  // Try AI generation if requested and API key is configured
+  if (useAI !== false && process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your-openai-api-key-here') {
+    const recs = getRecommendations(user, products);
+    message = await generateMessage(user, trigger, channel, recs);
+    if (message) aiGenerated = true;
+  }
+
+  // Fallback to template
+  if (!message) {
+    const context = buildContext(user, products);
+    message = renderTemplate(trigger, context, channel);
+  }
 
   const record = await Message.create({
     userId, channel, trigger, intent, message,
     personalizedFor: user.name,
     segments: user.segments,
-    consentVerified: true
+    consentVerified: true,
+    aiGenerated
   });
 
   res.json(record);
@@ -55,9 +69,9 @@ function resolveChannel(user, preferred) {
   return ['whatsapp', 'sms', 'email', 'instagram'].find(ch => user.consent[ch]) || null;
 }
 
-function buildContext(user, products) {
-  const purchased = new Set(user.purchaseHistory.map(p => p.productId));
-  const recs = products
+function getRecommendations(user, products) {
+  const purchased = new Set((user.purchaseHistory || []).map(p => p.productId));
+  return products
     .filter(p => !purchased.has(p.productId))
     .map(p => {
       let score = 0;
@@ -69,7 +83,10 @@ function buildContext(user, products) {
     })
     .sort((a, b) => b.score - a.score)
     .slice(0, 3);
+}
 
+function buildContext(user, products) {
+  const recs = getRecommendations(user, products);
   return {
     userName: user.name,
     cartItems: user.cart || [],
