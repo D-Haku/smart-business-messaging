@@ -4,7 +4,6 @@ const User = require('../models/User');
 const Message = require('../models/Message');
 const Product = require('../models/Product');
 const { renderTemplate } = require('../messaging/templates');
-const { generateMessage } = require('../ai/aiService');
 
 const TRIGGER_INTENT = {
   cart_abandonment: 'RECOVERY',
@@ -15,7 +14,7 @@ const TRIGGER_INTENT = {
 };
 
 router.post('/send', async (req, res) => {
-  const { userId, trigger, channel: preferredChannel, useAI } = req.body;
+  const { userId, trigger, channel: preferredChannel } = req.body;
   if (!userId || !trigger) return res.status(400).json({ error: 'userId and trigger required' });
 
   const user = await User.findById(userId).lean();
@@ -31,28 +30,14 @@ router.post('/send', async (req, res) => {
   }
 
   const products = await Product.find().lean();
-  let message;
-  let aiGenerated = false;
-
-  // Try AI generation if requested and API key is configured
-  if (useAI !== false && process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your-openai-api-key-here') {
-    const recs = getRecommendations(user, products);
-    message = await generateMessage(user, trigger, channel, recs);
-    if (message) aiGenerated = true;
-  }
-
-  // Fallback to template
-  if (!message) {
-    const context = buildContext(user, products);
-    message = renderTemplate(trigger, context, channel);
-  }
+  const context = buildContext(user, products);
+  const message = renderTemplate(trigger, context, channel);
 
   const record = await Message.create({
     userId, channel, trigger, intent, message,
     personalizedFor: user.name,
     segments: user.segments,
-    consentVerified: true,
-    aiGenerated
+    consentVerified: true
   });
 
   res.json(record);
